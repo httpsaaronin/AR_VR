@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive VR Nuclear Power Plant (A-Frame)</title>
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Roboto+Mono&display=swap"
+        rel="stylesheet">
+
+    <!-- A-Frame Core framework -->
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+
+    <!-- Expose Custom Components -->
+    <script src="js/components.js"></script>
+</head>
+
+<body>
+
+    <!-- 2D UI Overlay Layer -->
+    <div id="ui-layer" class="active">
+
+        <!-- Main Overview Page -->
+        <main id="overview-page" class="panel glass-panel fade-in">
+            <header>
+                <h1>Nuclear Power <span>VR Explorer</span></h1>
+                <p class="subtitle">An immersive journey into the heart of clean energy generation.</p>
+            </header>
+
+            <section class="content-section">
+                <div class="info-card">
+                    <h2>How it Works</h2>
+                    <p>Nuclear power plants generate electricity using the heat created by nuclear fission. Inside the
+                        reactor core, atoms of uranium are split, releasing vast amounts of energy.</p>
+                    <p>This heat boils water to produce steam, which spins massive turbines connected to electric
+                        generators.</p>
+                </div>
+
+                <div class="features-list">
+                    <h3>Explore Five Key Areas:</h3>
+                    <ul>
+                        <li><span class="icon">☢️</span> <strong>Reactor Building:</strong> See fission in action.</li>
+                        <li><span class="icon">⚙️</span> <strong>Turbine Hall:</strong> Watch steam generate power.</li>
+                        <li><span class="icon">🌊</span> <strong>Cooling Towers:</strong> Understand thermal regulation.
+                        </li>
+                        <li><span class="icon">🎛️</span> <strong>Control Room:</strong> Monitor plant operations.</li>
+                        <li><span class="icon">🚰</span> <strong>Piping Systems:</strong> Follow the energy flow.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <footer class="action-footer">
+                <p>Click below to initialize the immersive 3D/VR view.</p>
+                <button id="btn-explore-2d" class="btn primary-btn pulse-glow">Enter Experience</button>
+            </footer>
+        </main>
+
+        <!-- In-game UI overlay (Mini-map, Info popups) -->
+        <div id="ingame-ui" class="hidden">
+            <div id="guided-tour-panel" class="glass-panel top-center">
+                <h3>Guided Tour</h3>
+                <p id="tour-instruction">Welcome to the facility. Let's begin at the Reactor Core.</p>
+                <div class="tour-controls">
+                    <button id="btn-prev-tour" class="btn small-btn">◄ Prev</button>
+                    <button id="btn-next-tour" class="btn small-btn">Next ►</button>
+                </div>
+            </div>
+
+            <div id="minimap-container" class="glass-panel bottom-right">
+                <h4>Facility Map</h4>
+                <div class="minimap-grid">
+                    <div class="map-node active" data-location="reactor">Core</div>
+                    <div class="map-node" data-location="turbine">Turbines</div>
+                    <div class="map-node" data-location="cooling">Cooling</div>
+                    <div class="map-node" data-location="control">Control</div>
+                </div>
+            </div>
+
+            <button id="btn-exit-3d" class="btn secondary-btn top-left">Exit Explorer</button>
+        </div>
+
+    </div>
+
+    <!-- Spatial HTML element for Hotspot interaction -->
+    <div id="spatial-panel" class="spatial-tag hidden">
+        <h4 id="sp-title">Component</h4>
+        <p id="sp-desc">Description</p>
+        <button id="sp-close" class="btn small-btn" style="margin-top:10px; width:100%">Close</button>
+    </div>
+
+    <!-- A-Frame 3D Scene setup -->
+    <div id="app-canvas-container" class="hidden">
+        <a-scene embedded xr-mode-ui="enabled: true" renderer="colorManagement: true, physicallyCorrectLights: true"
+            background="color: #0f172a">
+
+            <!-- Global Lighting -->
+            <a-entity light="type: hemisphere; color: #ffffff; groundColor: #444444; intensity: 0.6"></a-entity>
+            <a-entity light="type: directional; color: #ffffff; intensity: 0.8; castShadow: true"
+                position="20 20 20"></a-entity>
+
+            <!-- Ground -->
+            <a-plane position="0 0 0" rotation="-90 0 0" width="100" height="100" color="#1e293b" roughnes="0.8"
+                metalness="0.2" shadow="receive: true"></a-plane>
+            <a-entity position="0 0.01 0" geometry="primitive: plane; width: 100; height: 100" rotation="-90 0 0"
+                material="color: #334155; wireframe: true"></a-entity>
+
+            <!-- Player Camera Rig -->
+            <a-entity id="rig" position="0 1.6 5">
+                <!-- Camera and 2D target gaze raycaster -->
+                <a-camera id="player-camera" look-controls wasd-controls>
+                    <!-- Visual cursor for 2D mouse testing -->
+                    <a-cursor color="#38bdf8" fuse="false" raycaster="objects: .hotspot"></a-cursor>
+                </a-camera>
+                <!-- VR Hand Controllers -->
+                <a-entity laser-controls="hand: left" raycaster="objects: .hotspot"></a-entity>
+                <a-entity laser-controls="hand: right" raycaster="objects: .hotspot"></a-entity>
+            </a-entity>
+
+            <!-- 1. Reactor Building -->
+            <a-entity id="reactor-group" position="-5 0 -10">
+                <!-- Containment -->
+                <a-cylinder position="0 4 0" radius="4" height="8" color="#475569" metalness="0.6" roughness="0.4"
+                    transparent="true" opacity="0.4" shadow="cast: true"></a-cylinder>
+                <!-- Inner Core -->
+                <a-cylinder id="reactor-core" position="0 3 0" radius="1.5" height="4" color="#222222"
+                    material="emissive: #0ea5e9; emissiveIntensity: 2; roughness: 0.1"></a-cylinder>
+                <!-- Control Rods -->
+                <a-entity id="control-rods" position="0 3 0" reactor-sim>
+                    <a-cylinder position="-0.5 2 -0.5" radius="0.1" height="3" color="#111111"
+                        metalness="0.9"></a-cylinder>
+                    <a-cylinder position="0.5 2 0.5" radius="0.1" height="3" color="#111111"
+                        metalness="0.9"></a-cylinder>
+                    <a-cylinder position="0.7 2 -0.2" radius="0.1" height="3" color="#111111"
+                        metalness="0.9"></a-cylinder>
+                    <a-cylinder position="-0.4 2 0.6" radius="0.1" height="3" color="#111111"
+                        metalness="0.9"></a-cylinder>
+                </a-entity>
+                <!-- Hotspot -->
+                <a-sphere class="hotspot" position="0 5 2" radius="0.3" material="color: #4ade80; wireframe: true"
+                    hotspot-panel="title: Reactor Core; desc: The heart of the plant where nuclear fission occurs, generating extreme heat."></a-sphere>
+            </a-entity>
+
+            <!-- 2. Turbine Hall -->
+            <a-entity id="turbine-group" position="5 2 -10">
+                <a-cylinder rotation="90 0 0" radius="1.5" height="6" color="#94a3b8" metalness="0.8" roughness="0.3"
+                    shadow="cast: true; receive: true"></a-cylinder>
+                <a-entity id="turbine-blades" turbine-sim>
+                    <a-box position="0 0 0" rotation="45 0 0" width="0.2" height="3.5" depth="0.5"
+                        color="#e2e8f0"></a-box>
+                    <a-box position="0 0 0" rotation="90 0 0" width="0.2" height="3.5" depth="0.5"
+                        color="#e2e8f0"></a-box>
+                    <a-box position="0 0 0" rotation="135 0 0" width="0.2" height="3.5" depth="0.5"
+                        color="#e2e8f0"></a-box>
+                    <a-box position="0 0 0" rotation="0 0 0" width="0.2" height="3.5" depth="0.5"
+                        color="#e2e8f0"></a-box>
+                </a-entity>
+                <!-- Hotspot -->
+                <a-sphere class="hotspot" position="0 2 2" radius="0.3" material="color: #4ade80; wireframe: true"
+                    hotspot-panel="title: Steam Turbine; desc: High-pressure steam spins these massive turbine blades to generate electricity."></a-sphere>
+            </a-entity>
+
+            <!-- Pipe Connecting Reactor and Turbine (Simulated as straight tube for HTML simplicity) -->
+            <a-cylinder position="0 5 -10" rotation="0 0 90" radius="0.3" height="10" color="#b91c1c" metalness="0.5"
+                roughness="0.5" shadow="cast: true"></a-cylinder>
+
+            <!-- 3. Cooling Tower (Simple Cone proxy for A-Frame standard primitives) -->
+            <a-entity id="cooling-group" position="15 0 -15">
+                <a-cone position="0 7.5 0" radius-bottom="5" radius-top="3" height="15" color="#94a3b8" roughness="0.9"
+                    shadow="cast: true" open-ended="true" material="side: double"></a-cone>
+                <a-entity id="steam-particles" steam-sim position="0 15 0"></a-entity>
+                <!-- Hotspot -->
+                <a-sphere class="hotspot" position="0 2 5" radius="0.3" material="color: #4ade80; wireframe: true"
+                    hotspot-panel="title: Cooling Tower; desc: Excess heat is released here. The iconic shape creates a natural draft to cool the water efficiently."></a-sphere>
+            </a-entity>
+
+            <!-- 4. Control Room -->
+            <a-entity id="control-group" position="-15 0 10">
+                <a-box position="0 3 0" width="10" height="6" depth="8" color="#1e293b"
+                    material="side: back; transparent: true; opacity: 0.3"></a-box>
+                <a-box position="0 1.5 -2" width="6" height="1" depth="2" color="#334155"></a-box>
+                <!-- Screens -->
+                <a-plane position="-2 2.5 -2.5" rotation="-22.5 0 0" width="1.5" height="1" color="#111111"
+                    material="emissive: #22c55e; emissiveIntensity: 0.8"></a-plane>
+                <a-plane id="alert-screen" position="0 2.5 -2.5" rotation="-22.5 0 0" width="1.5" height="1"
+                    color="#111111" material="emissive: #ef4444; emissiveIntensity: 0.8" alert-sim></a-plane>
+                <a-plane position="2 2.5 -2.5" rotation="-22.5 0 0" width="1.5" height="1" color="#111111"
+                    material="emissive: #22c55e; emissiveIntensity: 0.8"></a-plane>
+                <!-- Hotspot -->
+                <a-sphere class="hotspot" position="0 2 -5" radius="0.3" material="color: #4ade80; wireframe: true"
+                    hotspot-panel="title: Control Room; desc: Operators monitor safety systems, core temperatures, and radiation levels 24/7."></a-sphere>
+            </a-entity>
+
+        </a-scene>
+    </div>
+
+    <!-- Main Bridge UI Logic -->
+    <script src="js/ui.js"></script>
+</body>
+
+</html>
